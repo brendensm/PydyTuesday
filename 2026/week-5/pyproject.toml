@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "lets-plot>=4.8.2",
     "pandas>=3.0.0",
+    "plotnine>=0.15.3",
     "pydytuesday>=0.1.2",
 ]
