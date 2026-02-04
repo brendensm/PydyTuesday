@@ -2,8 +2,8 @@ import textwrap
 import pandas as pd
 import pydytuesday
 from plotnine import (
-    ggplot, aes, geom_col, geom_text, coord_flip, labs,
-    theme_minimal, theme, element_rect, element_blank,
+    ggplot, aes, geom_col, coord_flip, labs,
+    theme_minimal, theme, element_rect, element_blank, element_text,
     scale_y_continuous, scale_fill_manual, guides, guide_legend
 )
 
@@ -62,15 +62,25 @@ cultivation_order = (
     .tolist()
 )
 
-cult_wat['cultivation'] = pd.Categorical(
-    cult_wat['cultivation'], 
-    categories=cultivation_order, 
-    ordered=True
+# =============================================================================
+# Create new cultivation labels with (N=X) format
+# =============================================================================
+cult_totals['cultivation_label'] = (
+    cult_totals['cultivation'] + ' (N=' + cult_totals['total_n'].astype(str) + ')'
 )
 
-cult_totals['cultivation'] = pd.Categorical(
-    cult_totals['cultivation'],
-    categories=cultivation_order,
+# Create mapping from original cultivation to new label
+label_map = dict(zip(cult_totals['cultivation'], cult_totals['cultivation_label']))
+
+# Apply to cult_wat
+cult_wat['cultivation_label'] = cult_wat['cultivation'].map(label_map)
+
+# Create ordered categories for the new labels (matching original order)
+cultivation_label_order = [label_map[c] for c in cultivation_order]
+
+cult_wat['cultivation_label'] = pd.Categorical(
+    cult_wat['cultivation_label'], 
+    categories=cultivation_label_order, 
     ordered=True
 )
 
@@ -93,15 +103,8 @@ subtitle_text = (
 cult_wat2 = cult_wat[cult_wat["count"] > 0]
 
 fig = (
-    ggplot(cult_wat2, aes(x="cultivation", y="percent", fill="water"))
+    ggplot(cult_wat2, aes(x="cultivation_label", y="percent", fill="water"))
     + geom_col()
-    + geom_text(
-        data=cult_totals,
-        mapping=aes(x="cultivation", y=-4, label="total_n"),
-        inherit_aes=False,
-        size=8,
-        ha="left"
-    )
     + coord_flip()
     + scale_y_continuous(
         labels=lambda l: [f"{int(v)}%" for v in l]
@@ -110,12 +113,14 @@ fig = (
     + guides(fill=guide_legend(reverse=True))
     + labs(
         title="Plant water needs by cultivation class",
-        subtitle=textwrap.fill(subtitle_text, width=75),
-        caption="TidyTuesday 2026, Week 5",
+        subtitle=textwrap.fill(subtitle_text, width=65),
+        caption="Brenden Smith | TidyTuesday 2026, Week 5",
         fill=""
     )
-    + theme_minimal()
+    + theme_minimal(base_size = 14, base_family="Georgia")
     + theme(
+        plot_subtitle = element_text(lineheight = 1),
+        plot_title = element_text(fontweight = "bold"),
         legend_position="bottom",
         axis_title=element_blank(),
         plot_title_position="plot",
